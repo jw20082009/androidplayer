@@ -10,6 +10,17 @@
 #define CGEPLATFORMS_H_
 
 #include <cstdio>
+
+#ifdef _CGE_USE_ES_API_3_0_
+	 #include <GLES3/gl3.h>
+	 #include <GLES3/gl3ext.h>
+#else
+	#include <GLES2/gl2.h>
+	
+#endif
+
+ #include <GLES2/gl2ext.h>
+
 //#include <EGL/egl.h>
 #include <android/log.h>
 #include <android/bitmap.h>

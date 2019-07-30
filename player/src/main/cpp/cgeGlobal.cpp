@@ -6,8 +6,8 @@
 *        Mail: admin@wysaid.org
 */
 
-#include "cgeGlobal.h"
-#include "cgeCommonDefine.h"
+#include "include/cgeGlobal.h"
+#include "include/cgeCommonDefine.h"
 
 #ifndef _CGE_ONLY_FILTERS_
 

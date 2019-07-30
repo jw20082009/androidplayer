@@ -8,8 +8,8 @@
 
 #ifdef _CGE_USE_FFMPEG_
 
-#include "cgeVideoDecoder.h"
-#include "cgeFFmpegHeaders.h"
+#include "include/cgeVideoDecoder.h"
+#include "include/cgeFFmpegHeaders.h"
 
 namespace CGE
 {

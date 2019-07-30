@@ -6,7 +6,7 @@
 *        Mail: admin@wysaid.org
 */
 
-#include "cgeCommonDefine.h"
+#include "include/cgeCommonDefine.h"
 #include <cassert>
 
 #define CGE_VERSION "3.0.0"
