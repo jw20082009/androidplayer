@@ -3,6 +3,7 @@ package com.wilbert.player;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -41,10 +42,15 @@ public class PlayerActivity extends AppCompatActivity {
 
     }
 
+    long startTime = 0;
+
     GLSurfaceView.Renderer renderer = new GLSurfaceView.Renderer() {
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
+            Log.i("CGELOGTAG","onSurfaceCreated");
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
+            videoPlayer.initPlayer("/sdcard/DCIM/test.mp4");
+            startTime = System.currentTimeMillis();
         }
 
         @Override
@@ -57,7 +63,7 @@ public class PlayerActivity extends AppCompatActivity {
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
             GLES20.glClear(GL_COLOR_BUFFER_BIT);
 //            PlayerActivity.this.onDrawFrame();
-            videoPlayer.onDrawFrame();
+            videoPlayer.onDrawFrame(System.currentTimeMillis()- startTime);
         }
     };
 

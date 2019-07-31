@@ -25,7 +25,9 @@ file(GLOB native_srcs
         cgeVideoDecoder.cpp
         svVideoPlayer.cpp
         cgeGlobal.cpp
-        cgeCommonDefine.cpp)
+        cgeCommonDefine.cpp
+        cgeGLFunctions.cpp
+        cgeShaderFunctions.cpp)
 
 add_library( # Sets the name of the library.
         native-lib

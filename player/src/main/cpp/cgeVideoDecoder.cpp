@@ -91,6 +91,7 @@ namespace CGE
 		m_context = new CGEVideoDecodeContext();
 		memset(&m_cachedVideoFrame, 0, sizeof(m_cachedVideoFrame));
 		memset(&m_cachedAudioFrame, 0, sizeof(m_cachedAudioFrame));
+		av_register_all();
 	}
 
 	CGEVideoDecodeHandler::~CGEVideoDecodeHandler()
@@ -100,11 +101,11 @@ namespace CGE
 
 	bool CGEVideoDecodeHandler::open(const char* filename)
 	{		
-		
-
+		CGE_LOG_INFO("cgeVideoDecoder open:%s",filename);
 		if(avformat_open_input(&m_context->pFormatCtx, filename, nullptr, nullptr)!=0 ||
 			avformat_find_stream_info(m_context->pFormatCtx, nullptr)<0)
 		{
+			CGE_LOG_INFO("cgeVideoDecoder 解码失败 open:%s",filename);
 			return false;  //解码失败
 		}
 
@@ -144,6 +145,7 @@ namespace CGE
 
 		if(m_context->pVideoCodec == nullptr || avcodec_open2(m_context->pVideoCodecCtx, m_context->pVideoCodec, nullptr) < 0)
 		{
+			CGE_LOG_INFO("cgeVideoDecoder 视频解码失败 open:%s",filename);
 			return false; //视频解码失败
 		}
 
@@ -222,13 +224,14 @@ namespace CGE
     	while(av_read_frame(m_context->pFormatCtx, &m_context->packet) >= 0)
 		{  
 			if(m_context->packet.stream_index == m_context->videoStreamIndex)
-			{  
+			{
+			    CGE_LOG_INFO("cgeVideoDecoder queryNextFrame avcodec_decode_video20 ");
 				ret = avcodec_decode_video2(m_context->pVideoCodecCtx, m_context->pVideoFrame, &gotFrame, &m_context->packet);
-
+                CGE_LOG_INFO("cgeVideoDecoder queryNextFrame avcodec_decode_video21 %d ",gotFrame);
 				if(gotFrame)
 				{
                     m_currentTimestamp = 1000.0 * (m_context->pVideoFrame->pkt_pts - m_context->pVideoStream->start_time) * av_q2d(m_context->pVideoStream->time_base);
-
+                    CGE_LOG_INFO("cgeVideoDecoder queryNextFrame avcodec_decode_video21 %d,%lf ",gotFrame,m_currentTimestamp);
                     av_free_packet(&m_context->packet);
 					return FrameType_VideoFrame;
 				}

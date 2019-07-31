@@ -6,10 +6,40 @@
 #define ANDROIDPLAYER_SVVIDEOPLAYER_H
 
 #include "cgeVideoDecoder.h"
-
+#include "cgeGLFunctions.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+namespace CGE
+{
+    class VideoPlayer{
+    public:
+        VideoPlayer();
+        ~VideoPlayer();
+        bool open(const char* filename);
+        bool initWithDecodeHandler(CGEVideoDecodeHandler*);
+        bool update(double time);
+        bool updateVideoFrame(const CGEVideoFrameBufferData* data = nullptr);
+        void setRotation(float rad);
+        void setFlipScale(float x, float y);
+        void render();
+        bool nextVideoFrame();
+        CGEFrameTypeNext queryNextFrame() { return m_decodeHandler->queryNextFrame(); }
+        void close();
+    protected:
+        ProgramObject m_program;
+        GLuint m_texYUV[3];
+        GLint m_texYLoc, m_texULoc, m_texVLoc;
+        GLuint m_posAttribLocation;
+        GLuint m_rotLoc, m_flipScaleLoc;
+        CGEVideoDecodeHandler* m_decodeHandler;
+
+        GLuint m_vertexBuffer;
+        int m_videoWidth, m_videoHeight;
+        int m_linesize[3];
+    };
+}
 
 JNIEXPORT jstring JNICALL Java_com_wilbert_player_JniVideoPlayer_stringFromJNI(
         JNIEnv *env,
@@ -17,21 +47,10 @@ JNIEXPORT jstring JNICALL Java_com_wilbert_player_JniVideoPlayer_stringFromJNI(
 
 JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_onDrawFrame(
         JNIEnv *env,
-        jobject /* this */);
+        jobject /* this */,jlong timestamp);
 
-namespace CGE
-{
-    class VideoPlayer{
-    public:
-        VideoPlayer();
-        void onDrawFrame();
-        ~VideoPlayer();
+JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_initPlayer(JNIEnv *env,jobject ,jstring filepath);
 
-    private:
-        const char* m_filename;
-        int m_mode;//0:阻塞模式，1：流畅模式
-    };
-}
 #ifdef __cplusplus
 }
 #endif

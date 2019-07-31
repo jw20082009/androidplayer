@@ -7,11 +7,13 @@ package com.wilbert.player;
  */
 public class JniVideoPlayer {
 
-    static {
-        System.loadLibrary("native-lib");
+    public JniVideoPlayer(){
+        NativeLibraryLoader.load();
     }
 
     public native String stringFromJNI();
 
-    public native void onDrawFrame();
+    public native void onDrawFrame(long timestamp);
+
+    public native void initPlayer(String filepath);
 }
