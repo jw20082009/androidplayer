@@ -3,10 +3,15 @@ package com.wilbert.player;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.lang.ref.SoftReference;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -19,6 +24,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     JniVideoPlayer videoPlayer;
     GLSurfaceView glSurfaceView;
+    MyHandler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,14 +38,8 @@ public class PlayerActivity extends AppCompatActivity {
         glSurfaceView.setEGLContextClientVersion(2);
         glSurfaceView.setRenderer(renderer);
         glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        glSurfaceView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                glSurfaceView.requestRender();
-            }
-        },100);
-//        glSurfaceView.requestRender();
-
+        handler = new MyHandler(this);
+        handler.sendEmptyMessage(MSG_REQUEST_FRAME);
     }
 
     long startTime = 0;
@@ -47,7 +47,7 @@ public class PlayerActivity extends AppCompatActivity {
     GLSurfaceView.Renderer renderer = new GLSurfaceView.Renderer() {
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-            Log.i("CGELOGTAG","onSurfaceCreated");
+            Log.i("CGELOGTAG", "onSurfaceCreated");
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
             videoPlayer.initPlayer("/sdcard/DCIM/test.mp4");
             startTime = System.currentTimeMillis();
@@ -60,14 +60,43 @@ public class PlayerActivity extends AppCompatActivity {
 
         @Override
         public void onDrawFrame(GL10 gl10) {
-            GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
-            GLES20.glClear(GL_COLOR_BUFFER_BIT);
 //            PlayerActivity.this.onDrawFrame();
-            videoPlayer.onDrawFrame(System.currentTimeMillis()- startTime);
+            videoPlayer.onDrawFrame(System.currentTimeMillis() - startTime);
         }
     };
 
-    protected void onDrawFrame(){
+    class MyHandler extends Handler {
+        SoftReference<PlayerActivity> reference;
 
+        public MyHandler(PlayerActivity activity) {
+            reference = new SoftReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            reference.get().handleMessage(msg);
+        }
+
+        public void invalidate() {
+            reference.clear();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.invalidate();
+    }
+
+    private final int MSG_REQUEST_FRAME = 0X01;
+
+    protected void handleMessage(Message message) {
+        switch (message.what) {
+            case MSG_REQUEST_FRAME:
+                glSurfaceView.requestRender();
+                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, 30);
+                break;
+        }
     }
 }
