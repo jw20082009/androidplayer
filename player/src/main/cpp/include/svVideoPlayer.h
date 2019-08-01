@@ -32,7 +32,7 @@ namespace CGE
         GLuint m_texYUV[3];
         GLint m_texYLoc, m_texULoc, m_texVLoc;
         GLuint m_posAttribLocation;
-        GLuint m_rotLoc, m_flipScaleLoc;
+        GLuint m_rotLoc, m_flipScaleLoc,m_texScale;
         CGEVideoDecodeHandler* m_decodeHandler;
 
         GLuint m_vertexBuffer;

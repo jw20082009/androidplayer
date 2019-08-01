@@ -16,8 +16,6 @@ import java.lang.ref.SoftReference;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
-
 public class PlayerActivity extends AppCompatActivity {
 
     // Used to load the 'native-lib' library on application startup.
@@ -43,24 +41,28 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     long startTime = 0;
+    int surfaceWidth, surfaceHeight;
 
     GLSurfaceView.Renderer renderer = new GLSurfaceView.Renderer() {
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
             Log.i("CGELOGTAG", "onSurfaceCreated");
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
-            videoPlayer.initPlayer("/sdcard/DCIM/test.mp4");
+            videoPlayer.initPlayer("/sdcard/DCIM/sssss3.mp4");
             startTime = System.currentTimeMillis();
         }
 
         @Override
         public void onSurfaceChanged(GL10 gl10, int i, int i1) {
+            surfaceWidth = i;
+            surfaceHeight = i1;
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
         }
 
         @Override
         public void onDrawFrame(GL10 gl10) {
 //            PlayerActivity.this.onDrawFrame();
+            GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
             videoPlayer.onDrawFrame(System.currentTimeMillis() - startTime);
         }
     };
@@ -95,7 +97,7 @@ public class PlayerActivity extends AppCompatActivity {
         switch (message.what) {
             case MSG_REQUEST_FRAME:
                 glSurfaceView.requestRender();
-                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, 30);
+//                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, 30);
                 break;
         }
     }

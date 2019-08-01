@@ -272,7 +272,7 @@ namespace CGE
 
 	const CGEVideoFrameBufferData* CGEVideoDecodeHandler::getCurrentVideoFrame()
 	{
-		
+
 		memcpy(m_cachedVideoFrame.linesize, m_context->pVideoFrame->linesize, sizeof(m_context->pVideoFrame->linesize));
 		memcpy(m_cachedVideoFrame.data, m_context->pVideoFrame->data, sizeof(m_context->pVideoFrame->data));
 		m_cachedVideoFrame.timestamp = av_frame_get_best_effort_timestamp(m_context->pVideoFrame);

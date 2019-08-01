@@ -6,46 +6,55 @@
 #include "include/cgeGlobal.h"
 #include <cmath>
 
-static const char *const s_vshYUV420p = CGE_SHADER_STRING
-(
-        attribute
-        vec4 vPosition;
-        varying
-        vec2 vTexCoord;
-        uniform
-        mat2 rotation;
-        uniform
-        vec2 flipScale;
+static const char *const s_vshYUV420p = CGE_SHADER_STRING_PRECISION_M
+                                        (
+                                                attribute
+                                                vec4 vPosition;
+                                                varying
+                                                vec2 vTexCoord;
+                                                uniform
+                                                mat2 rotation;
+                                                uniform
+                                                vec2 flipScale;
 
-        void main() {
-            gl_Position = vPosition;
-            // vTexCoord = vec2(1.0 + vPosition.x, 1.0 - vPosition.y) / 2.0;
-            vTexCoord = flipScale * (vPosition.xy / 2.0 * rotation) + 0.5;
-        }
-);
+                                                void main() {
+                                                    gl_Position = vPosition;
+                                                    // vTexCoord = vec2(1.0 + vPosition.x, 1.0 - vPosition.y) / 2.0;
+                                                    vTexCoord = flipScale *
+                                                                (vPosition.xy / 2.0 * rotation) +
+                                                                0.5;
+                                                }
+                                        );
 
-static CGEConstString s_fshYUV420p = CGE_SHADER_STRING
-(
-        varying
-        vec2 vTexCoord;
-        uniform
-        sampler2D textureY;
-        uniform
-        sampler2D textureU;
-        uniform
-        sampler2D textureV;
-        uniform
-        mat3 m3ColorConversion;
-        void main() {
-            vec3 yuv;
-            yuv.x = texture2D(textureY,
-                              vTexCoord).r; //fix: use full range
-            yuv.y = texture2D(textureU, vTexCoord).r - 0.5;
-            yuv.z = texture2D(textureV, vTexCoord).r - 0.5;
-            vec3 videoColor = m3ColorConversion * yuv;
-            gl_FragColor = vec4(videoColor, 1.0);
-        }
-);
+static CGEConstString s_fshYUV420p = CGE_SHADER_STRING_PRECISION_M
+                                     (
+                                             varying
+                                             vec2 vTexCoord;
+                                             uniform
+                                             sampler2D textureY;
+                                             uniform
+                                             sampler2D textureU;
+                                             uniform
+                                             sampler2D textureV;
+                                             uniform
+                                             mat3 m3ColorConversion;
+                                             uniform float texScale;
+                                             void main() {
+                                                 vec3 yuv;
+                                                 yuv.x = texture2D(textureY,
+                                                                   vec2(vTexCoord.x * 0.9444,
+                                                                        vTexCoord.y)).r; //fix: use full range
+                                                 yuv.y = texture2D(textureU,
+                                                                   vec2(vTexCoord.x * 0.9444,
+                                                                        vTexCoord.y)).r - 0.5;
+                                                 yuv.z = texture2D(textureV,
+                                                                   vec2(vTexCoord.x * 0.9444,
+                                                                        vTexCoord.y)).r - 0.5;
+                                                 vec3 videoColor = m3ColorConversion * yuv;
+
+                                                 gl_FragColor = vec4(videoColor, 1.0);
+                                             }
+                                     );
 
 static const GLfloat s_colorConversion601[] = {
         1, 1, 1,
@@ -85,10 +94,11 @@ namespace CGE {
         memset(m_texYUV, 0, sizeof(m_texYUV));
 
         m_rotLoc = m_program.uniformLocation("rotation");
+        m_texScale = m_program.uniformLocation("texScale");
         m_flipScaleLoc = m_program.uniformLocation("flipScale");
         CGE_LOG_INFO("VideoPlayer m_rotLoc %d,m_flipScaleLoc %d", m_rotLoc, m_flipScaleLoc);
         setRotation(0.0f);
-        setFlipScale(1.0f, 1.0f);
+        setFlipScale(1.0f, -1.0f);
         cgeCheckGLError("cgeVideoPlayerYUV420P");
     }
 
@@ -105,6 +115,7 @@ namespace CGE {
             CGE_LOG_ERROR("Open %s failed!\n", filename);
             return false;
         }
+        m_linesize[0] = m_linesize[1] = m_linesize[2] = 0;
         return initWithDecodeHandler(m_decodeHandler);
     }
 
@@ -116,6 +127,9 @@ namespace CGE {
         m_linesize[0] = m_videoWidth = m_decodeHandler->getWidth();
         m_linesize[2] = m_linesize[1] = m_linesize[0] / 2;
         m_videoHeight = m_decodeHandler->getHeight();
+        CGE_LOG_INFO(
+                "CGEVideoPlayerYUV420P initWithDecodeHandlerm_linesize[0], %d,m_linesize[2] %d",
+                m_linesize[0], m_linesize[2]);
         m_texYUV[0] = cgeGenTextureWithBuffer(nullptr, m_linesize[0], m_videoHeight, GL_LUMINANCE,
                                               GL_UNSIGNED_BYTE, 1, 1);
         m_texYUV[1] = cgeGenTextureWithBuffer(nullptr, m_linesize[1], m_videoHeight / 2,
@@ -182,16 +196,20 @@ namespace CGE {
         if (pFramebuffer == nullptr) {
             return false;
         }
-
+        CGE_LOG_INFO("mLineSize:%d,%d,%d", pFramebuffer->linesize[0], pFramebuffer->linesize[1],
+                     pFramebuffer->linesize[2]);
         const CGEVideoFrameBufferData &framebuffer = *pFramebuffer;
 
         m_program.bind();
-
+        if (framebuffer.linesize[0] !=
+            framebuffer.width) {//当linesize不等于视频宽度时会导致绿边，linesize是指每一行占多少字节，可能比宽度nwidth要大，它是根据cpu来对齐的，可能是16或32的整数倍，不同的cpu有不同的对齐方式。
+            glUniform1f(m_texScale, 1.0f * framebuffer.width / framebuffer.linesize[0]);
+        }
         if (m_linesize[0] != framebuffer.linesize[0]) {
             m_linesize[0] = framebuffer.linesize[0];
             m_linesize[1] = framebuffer.linesize[1];
             m_linesize[2] = framebuffer.linesize[2];
-
+            CGE_LOG_INFO("mLineSize:%d,%d,%d", m_linesize[0], m_linesize[1], m_linesize[2]);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, m_texYUV[0]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, m_linesize[0], m_videoHeight, 0,
