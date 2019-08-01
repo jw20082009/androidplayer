@@ -7,33 +7,47 @@
 
 #include "cgeVideoDecoder.h"
 #include "cgeGLFunctions.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-namespace CGE
-{
-    class VideoPlayer{
+namespace CGE {
+    class VideoPlayer {
     public:
         VideoPlayer();
+
         ~VideoPlayer();
-        bool open(const char* filename);
-        bool initWithDecodeHandler(CGEVideoDecodeHandler*);
+
+        bool open(const char *filename);
+
+        bool initWithDecodeHandler(CGEVideoDecodeHandler *);
+
         bool update(double time);
-        bool updateVideoFrame(const CGEVideoFrameBufferData* data = nullptr);
+
+        bool updateVideoFrame(const CGEVideoFrameBufferData *data = nullptr);
+
         void setRotation(float rad);
+
         void setFlipScale(float x, float y);
+
         void render();
+
         bool nextVideoFrame();
+
         CGEFrameTypeNext queryNextFrame() { return m_decodeHandler->queryNextFrame(); }
+
         void close();
+
+        void closeDecoder();
+
     protected:
         ProgramObject m_program;
         GLuint m_texYUV[3];
         GLint m_texYLoc, m_texULoc, m_texVLoc;
         GLuint m_posAttribLocation;
-        GLuint m_rotLoc, m_flipScaleLoc,m_texScale;
-        CGEVideoDecodeHandler* m_decodeHandler;
+        GLuint m_rotLoc, m_flipScaleLoc, m_texScale;
+        CGEVideoDecodeHandler *m_decodeHandler;
 
         GLuint m_vertexBuffer;
         int m_videoWidth, m_videoHeight;
@@ -45,12 +59,15 @@ JNIEXPORT jstring JNICALL Java_com_wilbert_player_JniVideoPlayer_stringFromJNI(
         JNIEnv *env,
         jobject /* this */);
 
-JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_onDrawFrame(
+JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_update(
         JNIEnv *env,
-        jobject /* this */,jlong timestamp);
+        jobject /* this */, jlong timestamp);
 
-JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_initPlayer(JNIEnv *env,jobject ,jstring filepath);
+JNIEXPORT void JNICALL
+Java_com_wilbert_player_JniVideoPlayer_initPlayer(JNIEnv *env, jobject, jstring filepath);
 
+JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_renderer(JNIEnv *env, jobject);
+JNIEXPORT void JNICALL Java_com_wilbert_player_JniVideoPlayer_release(JNIEnv *env, jobject);
 #ifdef __cplusplus
 }
 #endif

@@ -40,6 +40,24 @@ public class PlayerActivity extends AppCompatActivity {
         handler.sendEmptyMessage(MSG_REQUEST_FRAME);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        glSurfaceView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        handler.removeMessages(MSG_REQUEST_FRAME);
+        glSurfaceView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                videoPlayer.release();
+            }
+        });
+        super.onPause();
+    }
+
     long startTime = 0;
     int surfaceWidth, surfaceHeight;
 
@@ -48,7 +66,7 @@ public class PlayerActivity extends AppCompatActivity {
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
             Log.i("CGELOGTAG", "onSurfaceCreated");
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
-            videoPlayer.initPlayer("/sdcard/DCIM/sssss.mp4");
+            videoPlayer.initPlayer("/sdcard/DCIM/test.mp4");
             startTime = System.currentTimeMillis();
         }
 
@@ -62,7 +80,8 @@ public class PlayerActivity extends AppCompatActivity {
         @Override
         public void onDrawFrame(GL10 gl10) {
             GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
-            videoPlayer.onDrawFrame(System.currentTimeMillis() - startTime);
+            videoPlayer.renderer();
+            videoPlayer.update(System.currentTimeMillis() - startTime);
         }
     };
 
@@ -82,6 +101,7 @@ public class PlayerActivity extends AppCompatActivity {
         }
 
         public void invalidate() {
+            removeMessages(MSG_REQUEST_FRAME);
             removeCallbacks(null);
             reference.clear();
         }
@@ -99,7 +119,7 @@ public class PlayerActivity extends AppCompatActivity {
         switch (message.what) {
             case MSG_REQUEST_FRAME:
                 glSurfaceView.requestRender();
-                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, (long) (1.0f * 1000/16));
+                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, (long) (1.0f * 1000 / 30));
                 break;
         }
     }

@@ -66,7 +66,6 @@ namespace CGE {
 
     VideoPlayer::VideoPlayer() : m_posAttribLocation(0), m_decodeHandler(nullptr),
                                  m_vertexBuffer(0) {
-        CGE_LOG_INFO("VideoPlayer constructor");
         m_program.bindAttribLocation("vPosition", m_posAttribLocation);
         if (!m_program.initWithShaderStrings(s_vshYUV420p, s_fshYUV420p)) {
             CGE_LOG_ERROR("cgeVideoPlayerYUV420P program init failed!");
@@ -80,23 +79,17 @@ namespace CGE {
         m_texYLoc = m_program.uniformLocation("textureY");
         m_texULoc = m_program.uniformLocation("textureU");
         m_texVLoc = m_program.uniformLocation("textureV");
-        CGE_LOG_INFO("VideoPlayer m_texYLoc %d,m_texULoc %d,m_texVLoc %d", m_texYLoc, m_texULoc,
-                     m_texVLoc);
         glUniform1i(m_texYLoc, 1);
         glUniform1i(m_texULoc, 2);
         glUniform1i(m_texVLoc, 3);
-
         if (m_texYLoc < 0 || m_texULoc < 0 || m_texVLoc < 0) {
             CGE_LOG_ERROR("Invalid YUV Texture Uniforms %d,%d,%d\n", m_texULoc, m_texVLoc,
                           m_texYLoc);
         }
-
         memset(m_texYUV, 0, sizeof(m_texYUV));
-
         m_rotLoc = m_program.uniformLocation("rotation");
         m_texScale = m_program.uniformLocation("texScale");
         m_flipScaleLoc = m_program.uniformLocation("flipScale");
-        CGE_LOG_INFO("VideoPlayer m_rotLoc %d,m_flipScaleLoc %d", m_rotLoc, m_flipScaleLoc);
         setRotation(0.0f);
         setFlipScale(1.0f, -1.0f);
         cgeCheckGLError("cgeVideoPlayerYUV420P");
@@ -109,7 +102,6 @@ namespace CGE {
     bool VideoPlayer::open(const char *filename) {
         if (m_decodeHandler != nullptr)
             close();
-
         m_decodeHandler = new CGEVideoDecodeHandler();
         if (!m_decodeHandler->open(filename)) {
             CGE_LOG_ERROR("Open %s failed!\n", filename);
@@ -127,9 +119,6 @@ namespace CGE {
         m_linesize[0] = m_videoWidth = m_decodeHandler->getWidth();
         m_linesize[2] = m_linesize[1] = m_linesize[0] / 2;
         m_videoHeight = m_decodeHandler->getHeight();
-        CGE_LOG_INFO(
-                "CGEVideoPlayerYUV420P initWithDecodeHandlerm_linesize[0], %d,m_linesize[2] %d",
-                m_linesize[0], m_linesize[2]);
         m_texYUV[0] = cgeGenTextureWithBuffer(nullptr, m_linesize[0], m_videoHeight, GL_LUMINANCE,
                                               GL_UNSIGNED_BYTE, 1, 1);
         m_texYUV[1] = cgeGenTextureWithBuffer(nullptr, m_linesize[1], m_videoHeight / 2,
@@ -138,17 +127,19 @@ namespace CGE {
                                               GL_LUMINANCE, GL_UNSIGNED_BYTE, 1, 3);
         if (m_vertexBuffer == 0)
             m_vertexBuffer = cgeGenCommonQuadArrayBuffer();
-        CGE_LOG_INFO("CGEVideoPlayerYUV420P vertex buffer id: %d", m_vertexBuffer);
+        update(0);
         return m_vertexBuffer != 0;
     }
 
     void VideoPlayer::close() {
+        CGE_LOG_INFO("svVideoPlayer close");
         glDeleteTextures(3, m_texYUV);
         memset(m_texYUV, 0, sizeof(m_texYUV));
         delete m_decodeHandler;
         m_decodeHandler = nullptr;
         glDeleteBuffers(1, &m_vertexBuffer);
         m_vertexBuffer = 0;
+        CGE_LOG_INFO("svVideoPlayer close2");
     }
 
     void VideoPlayer::setRotation(float rad) {
@@ -158,7 +149,6 @@ namespace CGE {
                 cosRad, sinRad,
                 -sinRad, cosRad
         };
-
         m_program.bind();
         glUniformMatrix2fv(m_rotLoc, 1, GL_FALSE, mat2);
     }
@@ -191,17 +181,15 @@ namespace CGE {
     bool VideoPlayer::updateVideoFrame(const CGEVideoFrameBufferData *data) {
         const CGEVideoFrameBufferData *pFramebuffer =
                 data == nullptr ? m_decodeHandler->getCurrentVideoFrame() : data;
-
         if (pFramebuffer == nullptr) {
             return false;
         }
         const CGEVideoFrameBufferData &framebuffer = *pFramebuffer;
-
         m_program.bind();
         if (framebuffer.linesize[0] !=
             framebuffer.width) {//当linesize不等于视频宽度时会导致绿边，linesize是指每一行占多少字节，可能比宽度nwidth要大，它是根据cpu来对齐的，可能是16或32的整数倍，不同的cpu有不同的对齐方式。
-            glUniform1f(m_texScale,1.0f*framebuffer.width / framebuffer.linesize[0]);
-        }else{
+            glUniform1f(m_texScale, 1.0f * framebuffer.width / framebuffer.linesize[0]);
+        } else {
             glUniform1f(m_texScale, 1.0f);
         }
         if (m_linesize[0] != framebuffer.linesize[0]) {
@@ -238,9 +226,6 @@ namespace CGE {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_linesize[2], m_videoHeight / 2, GL_LUMINANCE,
                             GL_UNSIGNED_BYTE, framebuffer.data[2]);
         }
-//        glEnableVertexAttribArray(m_posAttribLocation);
-//        glVertexAttribPointer(m_posAttribLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
-//        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         cgeCheckGLError("cgeVideoPlayerYUV420P::updateVideoFrame");
         return true;
     }
@@ -255,9 +240,7 @@ namespace CGE {
     }
 
     bool VideoPlayer::update(double time) {
-        render();
         double ts = m_decodeHandler->getCurrentTimestamp();
-        CGE_LOG_INFO("update:%lf,%lf", time, ts);
         if (time < ts)
             return true;
         return nextVideoFrame();
@@ -275,8 +258,22 @@ namespace CGE {
         return initedPlayer;
     }
 
-    void cgeDrawFrame(jlong timestamp) {
-        m_videoPlayer->update(timestamp);
+    void update(jlong timestamp) {
+        if (m_videoPlayer != NULL)
+            m_videoPlayer->update(timestamp);
+    }
+
+    void renderer() {
+        if (m_videoPlayer != NULL)
+            m_videoPlayer->render();
+    }
+
+    void release() {
+        if (m_videoPlayer != NULL) {
+            delete (m_videoPlayer);
+            m_videoPlayer = NULL;
+            initedPlayer = false;
+        }
     }
 }
 
@@ -296,6 +293,16 @@ Java_com_wilbert_player_JniVideoPlayer_initPlayer(JNIEnv *env, jobject, jstring 
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_wilbert_player_JniVideoPlayer_onDrawFrame(JNIEnv *env, jobject, jlong timestamp) {
-    CGE::cgeDrawFrame(timestamp);
+Java_com_wilbert_player_JniVideoPlayer_update(JNIEnv *env, jobject, jlong timestamp) {
+    CGE::update(timestamp);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_wilbert_player_JniVideoPlayer_renderer(JNIEnv *env, jobject) {
+    CGE::renderer();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_wilbert_player_JniVideoPlayer_release(JNIEnv *env, jobject) {
+    CGE::release();
 }
