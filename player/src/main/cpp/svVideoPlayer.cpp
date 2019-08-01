@@ -189,7 +189,6 @@ namespace CGE {
     }
 
     bool VideoPlayer::updateVideoFrame(const CGEVideoFrameBufferData *data) {
-        CGE_LOG_INFO("svVideoPlayer updateVideoFrame ");
         const CGEVideoFrameBufferData *pFramebuffer =
                 data == nullptr ? m_decodeHandler->getCurrentVideoFrame() : data;
 
@@ -201,7 +200,6 @@ namespace CGE {
         m_program.bind();
         if (framebuffer.linesize[0] !=
             framebuffer.width) {//当linesize不等于视频宽度时会导致绿边，linesize是指每一行占多少字节，可能比宽度nwidth要大，它是根据cpu来对齐的，可能是16或32的整数倍，不同的cpu有不同的对齐方式。
-            CGE_LOG_INFO("mLineSize not the same:%d,%d", framebuffer.linesize[0],framebuffer.width);
             glUniform1f(m_texScale,1.0f*framebuffer.width / framebuffer.linesize[0]);
         }else{
             glUniform1f(m_texScale, 1.0f);
@@ -210,7 +208,6 @@ namespace CGE {
             m_linesize[0] = framebuffer.linesize[0];
             m_linesize[1] = framebuffer.linesize[1];
             m_linesize[2] = framebuffer.linesize[2];
-            CGE_LOG_INFO("mLineSize:%d,%d,%d", m_linesize[0], m_linesize[1], m_linesize[2]);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, m_texYUV[0]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, m_linesize[0], m_videoHeight, 0,
@@ -241,9 +238,9 @@ namespace CGE {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_linesize[2], m_videoHeight / 2, GL_LUMINANCE,
                             GL_UNSIGNED_BYTE, framebuffer.data[2]);
         }
-        glEnableVertexAttribArray(m_posAttribLocation);
-        glVertexAttribPointer(m_posAttribLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+//        glEnableVertexAttribArray(m_posAttribLocation);
+//        glVertexAttribPointer(m_posAttribLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
         cgeCheckGLError("cgeVideoPlayerYUV420P::updateVideoFrame");
         return true;
     }
@@ -258,6 +255,7 @@ namespace CGE {
     }
 
     bool VideoPlayer::update(double time) {
+        render();
         double ts = m_decodeHandler->getCurrentTimestamp();
         CGE_LOG_INFO("update:%lf,%lf", time, ts);
         if (time < ts)
@@ -270,17 +268,9 @@ namespace CGE {
 
     bool cgeInitPlayer(const char *inputFilename) {
         if (!initedPlayer) {
-//            CGEVideoDecodeHandler *decodeHandler = new CGEVideoDecodeHandler();
-//            if (!decodeHandler->open(inputFilename)) {
-//                CGE_LOG_ERROR("Open %s failed!\n", inputFilename);
-//                delete decodeHandler;
-//                return false;
-//            }
-//            m_videoPlayer = new VideoPlayer();
             m_videoPlayer = new VideoPlayer();
             m_videoPlayer->open(inputFilename);
             initedPlayer = true;
-//            m_videoPlayer.initWithDecodeHandler(decodeHandler);
         }
         return initedPlayer;
     }

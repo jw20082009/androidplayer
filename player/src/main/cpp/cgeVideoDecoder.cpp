@@ -225,13 +225,10 @@ namespace CGE
 		{  
 			if(m_context->packet.stream_index == m_context->videoStreamIndex)
 			{
-			    CGE_LOG_INFO("cgeVideoDecoder queryNextFrame avcodec_decode_video20 ");
 				ret = avcodec_decode_video2(m_context->pVideoCodecCtx, m_context->pVideoFrame, &gotFrame, &m_context->packet);
-                CGE_LOG_INFO("cgeVideoDecoder queryNextFrame avcodec_decode_video21 %d ",gotFrame);
 				if(gotFrame)
 				{
                     m_currentTimestamp = 1000.0 * (m_context->pVideoFrame->pkt_pts - m_context->pVideoStream->start_time) * av_q2d(m_context->pVideoStream->time_base);
-                    CGE_LOG_INFO("cgeVideoDecoder queryNextFrame avcodec_decode_video21 %d,%lf ",gotFrame,m_currentTimestamp);
                     av_free_packet(&m_context->packet);
 					return FrameType_VideoFrame;
 				}
@@ -239,15 +236,11 @@ namespace CGE
 			else if(m_context->packet.stream_index == m_context->audioStreamIndex)
 			{
 				ret = avcodec_decode_audio4(m_context->pAudioCodecCtx, m_context->pAudioFrame, &gotFrame, &m_context->packet);
-
 //				ret = FFMIN(ret, m_context->packet.size);
-
 				if(gotFrame)
 				{
 					av_free_packet(&m_context->packet);
-
 // 					size_t unpaddedLinesize = m_context->pAudioFrame->nb_samples * av_get_bytes_per_sample((AVSampleFormat)m_context->pAudioFrame->format);
-
 					return FrameType_AudioFrame;
 				}
 			}

@@ -61,7 +61,6 @@ public class PlayerActivity extends AppCompatActivity {
 
         @Override
         public void onDrawFrame(GL10 gl10) {
-//            PlayerActivity.this.onDrawFrame();
             GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
             videoPlayer.onDrawFrame(System.currentTimeMillis() - startTime);
         }
@@ -77,10 +76,13 @@ public class PlayerActivity extends AppCompatActivity {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
-            reference.get().handleMessage(msg);
+            if (reference != null) {
+                reference.get().handleMessage(msg);
+            }
         }
 
         public void invalidate() {
+            removeCallbacks(null);
             reference.clear();
         }
     }
@@ -97,7 +99,7 @@ public class PlayerActivity extends AppCompatActivity {
         switch (message.what) {
             case MSG_REQUEST_FRAME:
                 glSurfaceView.requestRender();
-//                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, 30);
+                handler.sendEmptyMessageDelayed(MSG_REQUEST_FRAME, (long) (1.0f * 1000/16));
                 break;
         }
     }
