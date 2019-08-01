@@ -42,13 +42,13 @@ static CGEConstString s_fshYUV420p = CGE_SHADER_STRING_PRECISION_M
                                              void main() {
                                                  vec3 yuv;
                                                  yuv.x = texture2D(textureY,
-                                                                   vec2(vTexCoord.x * 0.9444,
+                                                                   vec2(vTexCoord.x * texScale,
                                                                         vTexCoord.y)).r; //fix: use full range
                                                  yuv.y = texture2D(textureU,
-                                                                   vec2(vTexCoord.x * 0.9444,
+                                                                   vec2(vTexCoord.x * texScale,
                                                                         vTexCoord.y)).r - 0.5;
                                                  yuv.z = texture2D(textureV,
-                                                                   vec2(vTexCoord.x * 0.9444,
+                                                                   vec2(vTexCoord.x * texScale,
                                                                         vTexCoord.y)).r - 0.5;
                                                  vec3 videoColor = m3ColorConversion * yuv;
 
@@ -196,14 +196,15 @@ namespace CGE {
         if (pFramebuffer == nullptr) {
             return false;
         }
-        CGE_LOG_INFO("mLineSize:%d,%d,%d", pFramebuffer->linesize[0], pFramebuffer->linesize[1],
-                     pFramebuffer->linesize[2]);
         const CGEVideoFrameBufferData &framebuffer = *pFramebuffer;
 
         m_program.bind();
         if (framebuffer.linesize[0] !=
             framebuffer.width) {//当linesize不等于视频宽度时会导致绿边，linesize是指每一行占多少字节，可能比宽度nwidth要大，它是根据cpu来对齐的，可能是16或32的整数倍，不同的cpu有不同的对齐方式。
-            glUniform1f(m_texScale, 1.0f * framebuffer.width / framebuffer.linesize[0]);
+            CGE_LOG_INFO("mLineSize not the same:%d,%d", framebuffer.linesize[0],framebuffer.width);
+            glUniform1f(m_texScale,1.0f*framebuffer.width / framebuffer.linesize[0]);
+        }else{
+            glUniform1f(m_texScale, 1.0f);
         }
         if (m_linesize[0] != framebuffer.linesize[0]) {
             m_linesize[0] = framebuffer.linesize[0];

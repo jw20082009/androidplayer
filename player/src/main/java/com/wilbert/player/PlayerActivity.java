@@ -48,7 +48,7 @@ public class PlayerActivity extends AppCompatActivity {
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
             Log.i("CGELOGTAG", "onSurfaceCreated");
             GLES20.glClearColor(1.0f, 0f, 0f, 1.0f);
-            videoPlayer.initPlayer("/sdcard/DCIM/sssss3.mp4");
+            videoPlayer.initPlayer("/sdcard/DCIM/sssss.mp4");
             startTime = System.currentTimeMillis();
         }
 
